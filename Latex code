@@ -1,0 +1,1326 @@
+\documentclass[a4paper,12pt,italian]{article}
+\usepackage[utf8]{inputenc} \usepackage[italian]{babel}
+\usepackage{latexsym}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\lstset{
+    language=R,
+    backgroundcolor=\color{gray!10},
+    numberstyle=\color{black},
+    commentstyle=\color{green!50},
+    stringstyle=\color{red!50},
+    keywordstyle=\color{blue!50},
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    showstringspaces=false
+}
+\title{Progetto di Fondamenti di Statistica per Data Science}
+\author{Studente: Marco Vitali - matricola: 7160437}
+\date{21 febbraio 2025}
+\begin{document}
+    \maketitle
+    \section{DATASET 2 GSS  General Social Survey data in USA}
+    Un sondaggio negli Stati Uniti d'America ha raccolto dati generici nel corso degli anni dal 1972 al 2006 e in questo studio cercheremo di capire quali possano essere le correlazioni tra le risposte ottenute dagli individui.
+    \subsection{Presentazione delle variabili}
+    I dati che sono stati raccolti nel corso del sondaggio sono:
+
+
+    \begin{itemize}
+    \item $X_1=year$ \\
+    \item $X_2=CapPun$ \\
+    \item $X_3=GunLaw$ \\
+    \item $X_4=Sex$ \\
+    \item $X_5=AbRape$ \\
+    \item $X_6=ConfInAN$ \\
+    \item $X_7=SatJob$ \\
+    \end{itemize}
+
+
+    Queste variabili rappresentano, in ordine: \\
+    \textit{Year}: l'anno in cui l'individuo è stato sottoposto al sondaggio. \\
+    \textit{CapPun}: Se l'individuo è favorevole o meno alla pena di morte nei confronti delle persone che hanno commesso omicidio. 1: Favorevole. 2: Non favorevole. \\
+    \textit{GunLaw}: Se l'individuo è favorevole o meno ad una legge che permette alle persone di acquistare una pistola solamente dopo aver ottenuto un permesso emesso dalla polizia. 1: Favorevole. 2: Non favorevole. \\
+    \textit{Sex}: Il sesso biologico dell'individuo. 1: Maschio. 2: Femmina. \\
+    \textit{AbRape}: Se l'individuo è favorevole o meno a lasciare ad una donna incinta il diritto di abortire legalmente in caso di gravidanza dovuta ad uno stupro. 1: Favorevole. 2: Non favorevole. \\
+    \textit{ConfInAN}: Quanta fiducia ha l'individuo in banche e istituzioni finanziarie. 1: Molta fiducia. 2: Media fiducia. 3: Poca fiducia. \\
+    \textit{SatJob}: Quanto l'individuo è soddisfatto del proprio lavoro. 1: Molto soddisfatto. 2: Moderatamente soddisfatto. 3: Non soddisfatto. \\
+
+    Come prima cosa salviamo i dati numerici che ci serviranno per le regressioni, poi cambiamo i valori che assumono le variabili per una più facile interpretazione: \\
+
+    
+        
+    \begin{lstlisting}
+        numericGSS <- GSS
+        GSS$CAPPUN[GSS$CAPPUN==1] <- "Favorevole"
+        GSS$CAPPUN[GSS$CAPPUN==2] <- "Non favorevole"
+        GSS$GUNLAW[GSS$GUNLAW==1] <- "Favorevole"
+        GSS$GUNLAW[GSS$GUNLAW==2] <- "Non favorevole"
+        GSS$SEX[GSS$SEX==1] <- "Maschio"
+        GSS$SEX[GSS$SEX==2] <- "Femmina"
+        GSS$ABRAPE[GSS$ABRAPE==1] <- "Favorevole"
+        GSS$ABRAPE[GSS$ABRAPE==2] <- "Non favorevole"
+        GSS$CONFINAN[GSS$CONFINAN==1] <- "Molta fiducia"
+        GSS$CONFINAN[GSS$CONFINAN==2] <- "Media fiducia"
+        GSS$CONFINAN[GSS$CONFINAN==3] <- "Poca fiducia"
+        GSS$SATJOB[GSS$SATJOB==1] <- "Molto soddisfatto"
+        GSS$SATJOB[GSS$SATJOB==2] <- "Moderatamente soddisfatto"
+        GSS$SATJOB[GSS$SATJOB==3] <- "Poco soddisfatto" 
+    \end{lstlisting}
+    
+    \subsection{Analisi delle dipendenze}
+
+    Ora adatteremo dei modelli per cercare di capire le dipendenze di ogni variabile dalle altre, questo rappresenta come le risposte degli individui sottoposti al sondaggio possano essere influenzate dalle loro altre risposte.
+    Nel far ciò eviteremo ricerche di dipendenze poco realistiche, per questo non ricercheremo un modello di dipendenza per le variabili "year" e "Sex".
+
+    \begin{lstlisting}
+        fit_CapPun <- glm(numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_CapPun)
+        
+        Call:
+        glm(formula = numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW +        GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+
+        Coefficients:
+                                     Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)                  7.547390   4.229454                              1.784    0.07435 .  
+        GSS$ABRAPEnon favorevole     0.564309   0.049719                             11.350    < 2e-16 ***
+        GSS$GUNLAWnon favorevole    -0.313782   0.049428                             -6.348   2.18e-10 ***
+        GSS$SEXM                    -0.409884   0.041215                             -9.945    < 2e-16 ***
+        GSS$CONFINANmolta fiducia    0.004758   0.045622                              0.104    0.91694    
+        GSS$CONFINANpoca fiducia     0.141219   0.056910                              2.481    0.01309 *  
+        GSS$SATJOBmolto soddisfatto -0.126104   0.043552                             -2.896    0.00379 ** 
+        GSS$SATJOBpoco soddisfatto   0.143839   0.059242                              2.428    0.01518 *  
+        year                        -0.004206   0.002128                             -1.976    0.04811 *  
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 15421  on 13066  degrees of freedom
+        Residual deviance: 15098  on 13058  degrees of freedom
+          (37953 observations deleted due to missingness)
+        AIC: 15116
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+    
+    Da questa analisi possiamo osservare che:
+
+    \begin{itemize}
+    \item Le variabili AbRape, GunLaw e Sex sembrano essere molto significative, in particolare chi non è favorevole a lasciare il diritto di aborto alle donne incinte nel caso di stupro, chi è favorevole all'introduzione della legge sul possedimento di una pistola e chi è donna tende ad essere più facilmente favorevole alla pena capitale per chi commette omicidi.\\
+    \item Chi è molto soddisfatto del proprio lavoro tende a non essere favorevole alla pena capitale. \\
+    \item Chi è poco soddisfatto del proprio lavoro, insieme a chi ha poca fiducia nelle istituzioni finanziarie e a chi ha fatto il sondaggio più indietro nel tempo tende ad essere più favorevole alla pena capitale, anche se per queste informazioni il p-value si avvicina alla soglia di 0.05 che prendiamo come limite, quindi possiamo ritenere queste informazioni poco attendibili. \\
+    \item Il fatto di avere molta fiducia nelle istituzioni finanziarie non sembra essere significativo nei confronti di chi è favorevole o meno alla pena di morte. \\
+    \end{itemize}
+
+    Alla luce di questi dati proviamo ad ottenere un modello ridotto eliminando le variabili ConfInAN e Year, che sembrano essere le meno significative;
+
+    \begin{lstlisting}
+        fit_CapPun1 <- glm(numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW + GSS$SEX + GSS$SATJOB, family = binomial(link = logit))
+        summary(fit_CapPun1)
+        
+        Call:
+        glm(formula = numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW + GSS$SEX + GSS$SATJOB, family = binomial(link = logit))
+
+        Coefficients:
+                                    Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)                 -0.87893    0.02952                           -29.774    < 2e-16 ***
+        GSS$ABRAPEnon favorevole     0.55412    0.03863                            14.346    < 2e-16 ***
+        GSS$GUNLAWnon favorevole    -0.28340    0.03952                            -7.171   7.47e-13 ***
+        GSS$SEXM                    -0.38095    0.03232                            -11.785   < 2e-16 ***
+        GSS$SATJOBmolto soddisfatto -0.11472    0.03411                             -3.363  0.000771 ***
+        GSS$SATJOBpoco soddisfatto   0.20014    0.04607                              4.344  1.40e-05 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 25067  on 21622  degrees of freedom
+        Residual deviance: 24590  on 21617  degrees of freedom
+          (29397 observations deleted due to missingness)
+        AIC: 24602
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+
+    Questo modello sembra essere molto più adatto poichè tutte le informazioni precedenti vengono confermate e tutti i p-value hanno valori molto bassi, inoltre questa volta anche il valore dell'intercetta sembra essere significativo. Importante da notare anche il fatto che avendo eliminato due variabili che avevano molti valori nulli, e che quindi eliminavano molte osservazioni, il valore delle deviazioni standard dei parametri è diminuito, mentre invece è aumentato il valore AIC. Ad ogni modo questo modello sembra essere molto più affidabile del precedente.
+
+    Il prossimo modello proposto sarà quello che cercherà di trovare le dipendenze della variabile GunLaw:
+
+    \begin{lstlisting}
+        fit_GunLaw <- glm(numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_GunLaw)
+
+        Call:
+        glm(formula = numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+
+        Coefficients:
+                                     Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)                 35.965968   4.552281                              7.901   2.77e-15 ***
+        GSS$CAPPUNnon favorevole    -0.315281   0.049467                             -6.374   1.85e-10 ***
+        GSS$ABRAPEnon favorevole     0.153571   0.055662                              2.759     0.0058 ** 
+        GSS$SEXM                     0.760178   0.042207                             18.011    < 2e-16 ***
+        GSS$CONFINANmolta fiducia   -0.004104   0.048173                             -0.085     0.9321    
+        GSS$CONFINANpoca fiducia     0.113682   0.059511                              1.910     0.0561 .  
+        GSS$SATJOBmolto soddisfatto -0.060406   0.045697                             -1.322     0.1862    
+        GSS$SATJOBpoco soddisfatto  -0.040940   0.064356                             -0.636     0.5247    
+        year                        -0.018835   0.002292                             -8.219    < 2e-16 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 14369  on 13066  degrees of freedom
+        Residual deviance: 13911  on 13058  degrees of freedom
+          (37953 observations deleted due to missingness)
+        AIC: 13929
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Chi è favorevole alla pena di morte, chi non è favorevole all'aborto, chi è maschio e chi ha fatto il sondaggio indietro nel tempo risulta essere significativamente più favorevole alla legge sulle armi.
+        \item L'intercetta ha un  valore significativo.
+        \item Il fatto che chi ha poca fiducia nelle istituzioni finanziarie sia portato a volere la legge sulle pistole ha un p-value molto vicino allo 0.05, quindi è un'informazione di cui non possiamo ancora determinare l'attendibilità.
+        \item Il resto delle variabili non sembrano essere significative, quindi proveremo ad adattare un nuovo modello senza queste variabili.
+    \end{itemize}
+
+    \begin{lstlisting}
+        fit_GunLaw1 <- glm(numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + year, family = binomial(link = logit))
+        summary(fit_GunLaw1)
+        Call:
+        glm(formula = numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + year, family = binomial(link = logit))
+
+        Coefficients:
+                                  Estimate Std. Error z   value   Pr(>|z|)    
+        (Intercept)              34.460112   3.051235                          11.294    < 2e-16 ***
+        GSS$CAPPUNnon favorevole -0.245248   0.034857                          -7.036   1.98e-12 ***
+        GSS$ABRAPEnon favorevole  0.196403   0.038359                           5.120   3.05e-07 ***
+        GSS$SEXM                  0.788973   0.029728                          26.539    < 2e-16 ***
+        year                     -0.018127   0.001535                         -11.811    < 2e-16 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 29187  on 27158  degrees of freedom
+        Residual deviance: 28237  on 27154  degrees of freedom
+          (23861 observations deleted due to missingness)
+        AIC: 28247
+
+        Number of Fisher Scoring iterations: 4    
+    \end{lstlisting}    
+
+    \begin{itemize}
+    \item Con questo modello tutte le variabili rimaste sono significative e si confermano tutte le informazioni ottenute nel modello precedente.
+    \item In questo caso il numero di osservazioni considerabili sono più del doppio del caso completo e ne consegue una diminuzione delle deviazioni standard e un aumento del valore AIC, il modello risulta ad ogni modo adatto al nostro studio.
+    \end{itemize}
+
+    Ora proviamo ad utilizzare AbRape come variabile obiettivo:
+
+    \begin{lstlisting}
+        fit_AbRape <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_AbRape)
+
+        Call:
+        glm(formula = numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+
+        Coefficients:
+                                      Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)                 -27.667671   4.913852                              -5.631   1.80e-08 ***
+        GSS$CAPPUNnon favorevole      0.563914   0.049730                              11.340    < 2e-16 ***
+        GSS$GUNLAWnon favorevole      0.156628   0.055668                               2.814    0.00490 ** 
+        GSS$SEXM                     -0.152458   0.048868                              -3.120    0.00181 ** 
+        GSS$CONFINANmolta fiducia    -0.042312   0.054114                              -0.782    0.43427    
+        GSS$CONFINANpoca fiducia     -0.051440   0.068968                              -0.746    0.45575    
+        GSS$SATJOBmolto soddisfatto   0.236043   0.051715                               4.564   5.01e-06 ***
+        GSS$SATJOBpoco soddisfatto   -0.038731   0.075453                              -0.513    0.60774    
+        year                          0.012997   0.002471                               5.260   1.44e-07 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 11868  on 13066  degrees of freedom
+        Residual deviance: 11678  on 13058  degrees of freedom
+          (37953 observations deleted due to missingness)
+        AIC: 11696
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Il modello mostra che chi è contro la pena di morte, chi è contrario alla legge sulle pistole, chi è donna, chi è molto soddisfatto del proprio lavoro e chi ha fatto il sondaggio più recentemente è tendenzialmente più volto al voler lasciare alle donne incinta per via di uno stupro la facoltà di decidere di abortire legalmente.
+        \item Al contrario si evince che avere fiducia o meno nelle istituzioni finanziarie, oppure essere poco soddisfatto del proprio lavoro non incide significativamente sulla scelta riguardante l'aborto.
+    \end{itemize}
+
+    In questo caso il modello ridotto offre i seguenti risultati:
+
+    \begin{lstlisting}
+        fit_AbRape1 <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_AbRape1)
+        
+        Call:
+        glm(formula = numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$SATJOB + year, family = binomial(link = logit))
+
+        Coefficients:
+                                     Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)                 -27.44446    3.74160                             -7.335   2.22e-13 ***
+        GSS$CAPPUNnon favorevole      0.56040    0.03870                             14.482    < 2e-16 ***
+        GSS$GUNLAWnon favorevole      0.20522    0.04343                              4.725   2.30e-06 ***
+        GSS$SEXM                     -0.15499    0.03766                             -4.116   3.86e-05 ***
+        GSS$SATJOBmolto soddisfatto   0.20780    0.03975                              5.227   1.72e-07 ***
+        GSS$SATJOBpoco soddisfatto    0.03227    0.05684                              0.568       0.57    
+        year                          0.01288    0.00188                              6.850   7.38e-12 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 19845  on 21622  degrees of freedom
+        Residual deviance: 19543  on 21616  degrees of freedom
+          (29397 observations deleted due to missingness)
+        AIC: 19557
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+
+    In questo caso il modello ridotto conferma tutte le informazioni ricevute dal modello completo diminuendo le deviazioni standard dei vari parametri, però conferma anche il fatto che l'essere poco soddisfatto del proprio lavoro non influenza le risposte riguardanti l'aborto, quindi in questo caso proviamo ad ottenere un modello ancora più semplificato rimuovendo anche la variabile SatJob:
+
+    \begin{lstlisting}
+        fit_AbRape2 <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + year, family = binomial(link = logit))
+        summary(fit_AbRape2)
+
+        Call:
+        glm(formula = numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + year, family = binomial(link = logit))
+
+        Coefficients:
+                                   Estimate Std. Error z value   Pr(>|z|)    
+        (Intercept)              -25.749635   3.295916                           -7.813   5.60e-15 ***
+        GSS$CAPPUNnon favorevole   0.581810   0.034079                           17.072    < 2e-16 ***
+        GSS$GUNLAWnon favorevole   0.198115   0.038356                            5.165   2.40e-07 ***
+        GSS$SEXM                  -0.151983   0.033207                           -4.577   4.72e-06 ***
+        year                       0.012083   0.001656                            7.297   2.95e-13 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        (Dispersion parameter for binomial family taken to be 1)
+
+            Null deviance: 25161  on 27158  degrees of freedom
+        Residual deviance: 24787  on 27154  degrees of freedom
+          (23861 observations deleted due to missingness)
+        AIC: 24797
+
+        Number of Fisher Scoring iterations: 4
+    \end{lstlisting}
+
+    A questo punto le variabili risultano tutte significative e le deviazioni standard scendono ulteriormente, quindi si può considerare questo come il miglior modello, tenendo però conto che questo modello ignora il fatto che chi è molto soddisfatto del proprio lavoro tende ad essere favorevole al lasciare la scelta sull'aborto.
+
+    La prossima variabile di cui andremo ad analizzare le dipendenze è ConFinAN. In questo caso però la variabile ha 3 output differenti quindi un modello di regressione logistica non è più adatto e dovremo optare per un modello di regressione lineare, tenendo conto però che il modello avrà dei limiti evidenti poichè la regressione lineare è adatta per variabili continue:
+
+    \begin{lstlisting}
+        fit_ConfInAN <- lm(numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$ABRAPE + GSS$SATJOB + year)
+        summary(fit_ConfInAN)
+
+        Call:
+        lm(formula = numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$GUNLAW + 
+        GSS$SEX + GSS$ABRAPE + GSS$SATJOB + year)
+
+        Residuals:
+            Min      1Q  Median      3Q     Max 
+        -1.1212 -0.7572  0.1188  0.2105  1.2844 
+
+        Coefficients:
+                                      Estimate Std. Error t value   Pr(>|t|)    
+        (Intercept)                 -8.3348195  1.1991624                              -6.951   3.81e-12 ***
+        GSS$CAPPUNnon favorevole     0.0228959  0.0127614                               1.794     0.0728 .  
+        GSS$GUNLAWnon favorevole     0.0208696  0.0134629                               1.550     0.1211    
+        GSS$SEXM                     0.0552518  0.0115918                               4.766   1.90e-06 ***
+        GSS$ABRAPEnon favorevole     0.0014927  0.0151700                               0.098     0.9216    
+        GSS$SATJOBmolto soddisfatto -0.0777748  0.0123357                              -6.305   2.98e-10 ***
+        GSS$SATJOBpoco soddisfatto   0.0840644  0.0173502                               4.845   1.28e-06 ***
+        year                         0.0046219  0.0006034                               7.660   1.99e-14 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        Residual standard error: 0.6448 on 13059 degrees of freedom
+          (37953 observations deleted due to missingness)
+        Multiple R-squared:  0.01476,	Adjusted R-squared:  0.01423 
+        F-statistic: 27.95 on 7 and 13059 DF,  p-value: < 2.2e-16
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Da questo modello si evince che chi è maschio, chi è poco soddisfatto del proprio lavoro e chi ha fatto il sondaggio più recentemente è più portato ad avere poca fiducia nelle istituzioni finanziarie, mentre cho è molto soddisfatto del proprio lavoro tende ad averne molta.
+        \item D'altra parte le variabili GunLaw e AbRape non sembrano essere influenti.
+        \item Per quanto riguarda la variabile CapPun, essa ha un p-value di poco superiore alla soglia di 0.05 e sembrerebbe indicare che chi non è favorevole alla pena capitale tende ad avere poca fiducia nelle istituzioni finanziarie, però per poter giudicare l'affidabilità di quest'informazione proviamo ad adattare un modello ridotto togliendo le variabili non significative.
+        \item L'errore residuo e la F-statistica sembrano avere buoni valori, mentre il valore R-quadro è molto basso.
+    \end{itemize}
+
+    \begin{lstlisting}
+        fit_ConfInAN1 <- lm(numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$SEX + GSS$SATJOB + year)
+        summary(fit_ConfInAN1)
+
+        Call:
+        lm(formula = numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$SEX + GSS$SATJOB + year)
+
+        Residuals:
+             Min       1Q   Median       3Q      Max 
+        -1.14239 -0.77450  0.08261  0.17346  1.23548 
+
+        Coefficients:
+                                      Estimate Std. Error t value   Pr(>|t|)    
+        (Intercept)                 -9.0194005  0.9098918                              -9.913    < 2e-16 ***
+        GSS$CAPPUNnon favorevole     0.0101251  0.0095576                               1.059      0.289    
+        GSS$SEXM                     0.0470597  0.0085808                               5.484   4.20e-08 ***
+        GSS$SATJOBmolto soddisfatto -0.0679220  0.0092084                              -7.376   1.68e-13 ***
+        GSS$SATJOBpoco soddisfatto   0.0981263  0.0131892                               7.440   1.04e-13 ***
+        year                         0.0049883  0.0004575                              10.903    < 2e-16 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        Residual standard error: 0.6418 on 23029 degrees of freedom
+          (27985 observations deleted due to missingness)
+        Multiple R-squared:  0.01426,	Adjusted R-squared:  0.01405 
+        F-statistic: 66.63 on 5 and 23029 DF,  p-value: < 2.2e-16
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Tutte lo osservazioni precedenti sulle variabili significative si confermano essere valide. 
+        \item La variabile CapPun ci conferma in questo caso non essere significativa, quindi proveremo ad applicare un modello nuovamente ridotto eliminandola.
+        \item L'errore residuo è rimasto circa invariato, la F-statistica è aumentata notevolmente mentre l'indice R-quadro non sembra migliorare.
+    \end{itemize}
+
+    \begin{lstlisting}
+        fit_ConfInAN2 <- lm(numericGSS$CONFINAN ~ GSS$SEX + GSS$SATJOB + year)
+        summary(fit_ConfInAN2)
+
+        Call:
+        lm(formula = numericGSS$CONFINAN ~ GSS$SEX + GSS$SATJOB + year)
+
+        Residuals:
+             Min       1Q   Median       3Q      Max 
+        -1.13810 -0.76857  0.08123  0.17506  1.23655 
+
+        Coefficients:
+                                      Estimate Std. Error t value   Pr(>|t|)    
+        (Intercept)                 -9.2859873  0.8812034                             -10.538    < 2e-16 ***
+        GSS$SEXM                     0.0477123  0.0082673                               5.771   7.96e-09 ***
+        GSS$SATJOBmolto soddisfatto -0.0707114  0.0089038                              -7.942   2.08e-15 ***
+        GSS$SATJOBpoco soddisfatto   0.0973814  0.0127668                               7.628   2.48e-14 ***
+        year                         0.0051241  0.0004431                              11.565    < 2e-16 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        Residual standard error: 0.6406 on 24496 degrees of freedom
+          (26519 observations deleted due to missingness)
+        Multiple R-squared:  0.01487,	Adjusted R-squared:  0.01471 
+        F-statistic: 92.42 on 4 and 24496 DF,  p-value: < 2.2e-16
+    \end{lstlisting}
+
+    A questo punto le variabili son tutte significative e tutte le informazioni ottenute precedentemente si confermano nuovamente, l'errore residuo resta nuovamente invariato, la F-statistica sale nuovamente raggiungendo un ottimo valore, mentre l'indice R-quadro rimane di basso valore.
+
+    Adesso proviamo ad adattare un modello per l'ultima variabile, ovvero SatJob, anche in questo caso sarà necessario un modello di regressione lineare:
+
+    \begin{lstlisting}
+        fit_SatJob <- lm(numericGSS$SATJOB ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$ABRAPE + GSS$CONFINAN + year)
+        summary(fit_SatJob)
+
+        Call:
+        lm(formula = numericGSS$SATJOB ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$ABRAPE + GSS$CONFINAN + year)
+
+        Residuals:
+            Min      1Q  Median      3Q     Max 
+        -0.8605 -0.6687  0.2221  0.3590  1.5206 
+
+        Coefficients:
+                                    Estimate Std. Error t value   Pr(>|t|)    
+        (Intercept)                1.4180850  1.3324704                             1.064      0.287    
+        GSS$CAPPUNnon favorevole   0.0690509  0.0141479                             4.881   1.07e-06 ***
+        GSS$GUNLAWnon favorevole   0.0109551  0.0149370                             0.733      0.463    
+        GSS$SEXM                  -0.0136011  0.0128808                            -1.056      0.291    
+        GSS$ABRAPEnon favorevole  -0.0823381  0.0168122                            -4.898   9.82e-07 ***
+        GSS$CONFINANmolta fiducia -0.1018428  0.0143332                            -7.105   1.26e-12 ***
+        GSS$CONFINANpoca fiducia   0.0940404  0.0182055                             5.165   2.43e-07 ***
+        year                      -0.0003705  0.0006705                            -0.553      0.581    
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        Residual standard error: 0.7154 on 13059 degrees of freedom
+          (37953 observations deleted due to missingness)
+        Multiple R-squared:  0.01142,	Adjusted R-squared:  0.01089 
+        F-statistic: 21.55 on 7 and 13059 DF,  p-value: < 2.2e-16
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Dal modello risulta che chi non è favorevole alla pena di morte, chi è favorevole alla proposta sull'aborto e chi ha poca fiducia nelle istituzioni finanziarie tende ad essere poco soddisfatto del proprio lavoro, mentre chi ha molta fiducia nelle istituzioni finanziarie tende ad essere molto soddisfatto del proprio lavoro.
+        \item Tutte le altre variabili non sembrano essere significative.
+        \item In questo modello l'errore residuo non è ottimo, come non ha un buon valore nemmeno l'indice R-quadro, però la F-statistica ha un buon valore che si presume possa salire ulteriormente nel modello ridotto.
+    \end{itemize}
+
+    \begin{lstlisting}
+        fit_SatJob1 <- lm(numericGSS$SATJOB ~ GSS$CAPPUN + GSS$ABRAPE + GSS$CONFINAN)
+        summary(fit_SatJob1)
+
+        Call:
+        lm(formula = numericGSS$SATJOB ~ GSS$CAPPUN + GSS$ABRAPE + GSS$CONFINAN)
+
+        Residuals:
+            Min      1Q  Median      3Q     Max 
+        -0.8424 -0.6712  0.2343  0.3507  1.5136 
+
+        Coefficients:
+                                  Estimate Std. Error t   value   Pr(>|t|)    
+        (Intercept)                0.67124    0.00867                          77.422    < 2e-16 ***
+        GSS$CAPPUNnon favorevole   0.07671    0.01288                           5.957   2.63e-09 ***
+        GSS$ABRAPEnon favorevole  -0.08625    0.01530                          -5.637   1.76e-08 ***
+        GSS$CONFINANmolta fiducia -0.09862    0.01310                          -7.528   5.42e-14 ***
+        GSS$CONFINANpoca fiducia   0.09446    0.01663                           5.682   1.36e-08 ***
+        ---
+        Signif. codes:  0 "***" 0.001 "**" 0.01 "*" 0.05 "." 0.1 " " 1
+
+        Residual standard error: 0.7137 on 15589 degrees of freedom
+          (35426 observations deleted due to missingness)
+        Multiple R-squared:  0.01158,	Adjusted R-squared:  0.01132 
+        F-statistic: 45.64 on 4 and 15589 DF,  p-value: < 2.2e-16
+    \end{lstlisting}
+
+    \begin{itemize}
+        \item Si confermano tutte le informazioni ottenute in precedenza.
+        \item Nel modello ridotto anche l'intercetta sembra avere un valore significativo.
+        \item Il valore dell'errore residuo sembra essere rimasto pressochè identico a prima, l'indice R-quadro aggiustato è migliorato ma rimanendo comunque a valori molto bassi, infine la F-statistica è salita come previsto.
+    \end{itemize}
+
+    \subsection{Selezione Stepwise dei modelli}
+    In questa sezione selezioneremo dei modelli di dipendenza per le variabili AbRape e SatJob con un metodo Stepwise, confrontando i modelli che otterremo percorrendo le direzioni "forward", "backward" e "both" ed utilizzando i metodi di penalizzazione AIC e BIC.
+
+    Per poter fare però le selezioni del modello con metodi stepwise è necessario prima eliminare le osservazioni con valori nulli, questo ridurrà di molto il numeri di dati a nostra disposizione lasciando poco più di 13000 osservazioni. Per farlo utilizziamo i seguenti comandi:
+
+    \begin{lstlisting}
+        GSS$YEAR <- year
+        GSS_clear <- na.omit(GSS)
+        numericGSS$YEAR <- year
+        numericGSS_clear <- na.omit(numericGSS)
+    \end{lstlisting}
+
+    A questo punto siamo pronti per iniziare:
+
+    \begin{lstlisting}
+        #AIC
+        #FORWARD
+        mod_null_AbRape <- glm(numericGSS_clear$ABRAPE ~ 1, family = binomial(link = logit))
+        mod_full_AbRape <- glm(numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$CONFINAN + GSS_clear$SATJOB + GSS_clear$YEAR, family=binomial(link=logit))
+        for_aic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "forward",k=2)
+        
+        Start:  AIC=11870.38
+        numericGSS_clear$ABRAPE ~ 1
+        
+                             Df Deviance   AIC
+        + GSS_clear$CAPPUN    1    11745 11749
+        + GSS_clear$YEAR      1    11846 11850
+        + GSS_clear$SATJOB    2    11846 11852
+        + GSS_clear$SEX       1    11855 11859
+        <none>                     11868 11870
+        + GSS_clear$GUNLAW    1    11867 11871
+        + GSS_clear$CONFINAN  2    11868 11874
+
+        Step:  AIC=11749.35
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN
+
+                             Df Deviance   AIC
+        + GSS_clear$SATJOB    2    11719 11727
+        + GSS_clear$YEAR      1    11721 11727
+        + GSS_clear$SEX       1    11739 11745
+        + GSS_clear$GUNLAW    1    11742 11748
+        <none>                     11745 11749
+        + GSS_clear$CONFINAN  2    11744 11752
+
+        Step:  AIC=11726.64
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB
+
+                             Df Deviance   AIC
+        + GSS_clear$YEAR      1    11694 11704
+        + GSS_clear$SEX       1    11712 11722
+        + GSS_clear$GUNLAW    1    11715 11725
+        <none>                     11719 11727
+        + GSS_clear$CONFINAN  2    11717 11729
+
+        Step:  AIC=11704.27
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        + GSS_clear$SEX       1    11687 11699
+        + GSS_clear$GUNLAW    1    11689 11701
+        <none>                     11694 11704
+        + GSS_clear$CONFINAN  2    11693 11707
+
+        Step:  AIC=11698.68
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR + GSS_clear$SEX
+
+                             Df Deviance   AIC
+        + GSS_clear$GUNLAW    1    11679 11693
+        <none>                     11687 11699
+        + GSS_clear$CONFINAN  2    11686 11702
+
+        Step:  AIC=11692.94
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR + GSS_clear$SEX + GSS_clear$GUNLAW
+
+                             Df Deviance   AIC
+        <none>                     11679 11693
+        + GSS_clear$CONFINAN  2    11678 11696
+        
+        #BACKWARD
+        back_aic_AbRape <- step(mod_full_AbRape, scope=formula(mod_full_AbRape), direction = "backward",k=2)
+
+        Start:  AIC=11696.01
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + 
+            GSS_clear$SEX + GSS_clear$CONFINAN + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        - GSS_clear$CONFINAN  2    11679 11693
+        <none>                     11678 11696
+        - GSS_clear$GUNLAW    1    11686 11702
+        - GSS_clear$SEX       1    11688 11704
+        - GSS_clear$SATJOB    2    11706 11720
+        - GSS_clear$YEAR      1    11706 11722
+        - GSS_clear$CAPPUN    1    11803 11819
+
+        Step:  AIC=11692.94
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW +     GSS_clear$SEX + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                           Df Deviance   AIC
+        <none>                   11679 11693
+        - GSS_clear$GUNLAW  1    11687 11699
+        - GSS_clear$SEX     1    11689 11701
+        - GSS_clear$SATJOB  2    11706 11716
+        - GSS_clear$YEAR    1    11707 11719
+        - GSS_clear$CAPPUN  1    11803 11815
+
+        #BOTH
+        both_aic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "both",k=2)
+
+        Start:  AIC=11870.38
+        numericGSS_clear$ABRAPE ~ 1
+
+                             Df Deviance   AIC
+        + GSS_clear$CAPPUN    1    11745 11749
+        + GSS_clear$YEAR      1    11846 11850
+        + GSS_clear$SATJOB    2    11846 11852
+        + GSS_clear$SEX       1    11855 11859
+        <none>                     11868 11870
+        + GSS_clear$GUNLAW    1    11867 11871
+        + GSS_clear$CONFINAN  2    11868 11874
+
+        Step:  AIC=11749.35
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN
+
+                             Df Deviance   AIC
+        + GSS_clear$SATJOB    2    11719 11727
+        + GSS_clear$YEAR      1    11721 11727
+        + GSS_clear$SEX       1    11739 11745
+        + GSS_clear$GUNLAW    1    11742 11748
+        <none>                     11745 11749
+        + GSS_clear$CONFINAN  2    11744 11752
+        - GSS_clear$CAPPUN    1    11868 11870
+
+        Step:  AIC=11726.64
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB
+
+                             Df Deviance   AIC
+        + GSS_clear$YEAR      1    11694 11704
+        + GSS_clear$SEX       1    11712 11722
+        + GSS_clear$GUNLAW    1    11715 11725
+        <none>                     11719 11727
+        + GSS_clear$CONFINAN  2    11717 11729
+        - GSS_clear$SATJOB    2    11745 11749
+        - GSS_clear$CAPPUN    1    11846 11852
+
+        Step:  AIC=11704.27
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        + GSS_clear$SEX       1    11687 11699
+        + GSS_clear$GUNLAW    1    11689 11701
+        <none>                     11694 11704
+        + GSS_clear$CONFINAN  2    11693 11707
+        - GSS_clear$YEAR      1    11719 11727
+        - GSS_clear$SATJOB    2    11721 11727
+        - GSS_clear$CAPPUN    1    11823 11831
+
+        Step:  AIC=11698.68
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR + GSS_clear$SEX
+
+                             Df Deviance   AIC
+        + GSS_clear$GUNLAW    1    11679 11693
+        <none>                     11687 11699
+        + GSS_clear$CONFINAN  2    11686 11702
+        - GSS_clear$SEX       1    11694 11704
+        - GSS_clear$SATJOB    2    11714 11722
+        - GSS_clear$YEAR      1    11712 11722
+        - GSS_clear$CAPPUN    1    11808 11818
+
+        Step:  AIC=11692.94
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR + GSS_clear$SEX + GSS_clear$GUNLAW
+
+                             Df Deviance   AIC
+        <none>                     11679 11693
+        + GSS_clear$CONFINAN  2    11678 11696
+        - GSS_clear$GUNLAW    1    11687 11699
+        - GSS_clear$SEX       1    11689 11701
+        - GSS_clear$SATJOB    2    11706 11716
+        - GSS_clear$YEAR      1    11707 11719
+        - GSS_clear$CAPPUN    1    11803 11815
+
+        #BIC
+        #FORWARD
+        for_bic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "forward",k=log(length(GSS_clear$ABRAPE)))
+
+        Start:  AIC=11877.86
+        numericGSS_clear$ABRAPE ~ 1
+
+                             Df Deviance   AIC
+        + GSS_clear$CAPPUN    1    11745 11764
+        + GSS_clear$YEAR      1    11846 11865
+        + GSS_clear$SEX       1    11855 11874
+        + GSS_clear$SATJOB    2    11846 11874
+        <none>                     11868 11878
+        + GSS_clear$GUNLAW    1    11867 11886
+        + GSS_clear$CONFINAN  2    11868 11896
+
+        Step:  AIC=11764.31
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN
+
+                             Df Deviance   AIC
+        + GSS_clear$YEAR      1    11721 11750
+        + GSS_clear$SATJOB    2    11719 11757
+        <none>                     11745 11764
+        + GSS_clear$SEX       1    11739 11768
+        + GSS_clear$GUNLAW    1    11742 11770
+        + GSS_clear$CONFINAN  2    11744 11782
+
+        Step:  AIC=11749.84
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        + GSS_clear$SATJOB    2    11694 11742
+        <none>                     11721 11750
+        + GSS_clear$SEX       1    11714 11752
+        + GSS_clear$GUNLAW    1    11716 11754
+        + GSS_clear$CONFINAN  2    11720 11768
+
+        Step:  AIC=11741.66
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$YEAR + GSS_clear$SATJOB
+
+                             Df Deviance   AIC
+        <none>                     11694 11742
+        + GSS_clear$SEX       1    11687 11744
+        + GSS_clear$GUNLAW    1    11689 11746
+        + GSS_clear$CONFINAN  2    11693 11760
+
+        #BACKWARD
+        back_bic_AbRape <- step(mod_full_AbRape, scope=formula(mod_full_AbRape), direction = "backward",k=log(length(GSS_clear$ABRAPE)))
+
+        Start:  AIC=11763.31
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$CONFINAN + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        - GSS_clear$CONFINAN  2    11679 11745
+        - GSS_clear$GUNLAW    1    11686 11762
+        <none>                     11678 11763
+        - GSS_clear$SEX       1    11688 11764
+        - GSS_clear$SATJOB    2    11706 11772
+        - GSS_clear$YEAR      1    11706 11781
+        - GSS_clear$CAPPUN    1    11803 11878
+
+        Step:  AIC=11745.29
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                           Df Deviance   AIC
+        - GSS_clear$GUNLAW  1    11687 11744
+        <none>                   11679 11745
+        - GSS_clear$SEX     1    11689 11746
+        - GSS_clear$SATJOB  2    11706 11754
+        - GSS_clear$YEAR    1    11707 11764
+        - GSS_clear$CAPPUN  1    11803 11860
+
+        Step:  AIC=11743.55
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SEX + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                           Df Deviance   AIC
+        - GSS_clear$SEX     1    11694 11742
+        <none>                   11687 11744
+        - GSS_clear$SATJOB  2    11714 11752
+        - GSS_clear$YEAR    1    11712 11760
+        - GSS_clear$CAPPUN  1    11808 11855
+
+        Step:  AIC=11741.66
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$SATJOB + GSS_clear$YEAR
+
+                           Df Deviance   AIC
+        <none>                   11694 11742
+        - GSS_clear$SATJOB  2    11721 11750
+        - GSS_clear$YEAR    1    11719 11757
+        - GSS_clear$CAPPUN  1    11823 11861
+
+        #BOTH
+        both_bic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "both",k=log(length(GSS_clear$ABRAPE)))
+
+        Start:  AIC=11877.86
+        numericGSS_clear$ABRAPE ~ 1
+
+                             Df Deviance   AIC
+        + GSS_clear$CAPPUN    1    11745 11764
+        + GSS_clear$YEAR      1    11846 11865
+        + GSS_clear$SEX       1    11855 11874
+        + GSS_clear$SATJOB    2    11846 11874
+        <none>                     11868 11878
+        + GSS_clear$GUNLAW    1    11867 11886
+        + GSS_clear$CONFINAN  2    11868 11896
+
+        Step:  AIC=11764.31
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN
+
+                             Df Deviance   AIC
+        + GSS_clear$YEAR      1    11721 11750
+        + GSS_clear$SATJOB    2    11719 11757
+        <none>                     11745 11764
+        + GSS_clear$SEX       1    11739 11768
+        + GSS_clear$GUNLAW    1    11742 11770
+        + GSS_clear$CONFINAN  2    11744 11782
+        - GSS_clear$CAPPUN    1    11868 11878
+
+        Step:  AIC=11749.84
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$YEAR
+
+                             Df Deviance   AIC
+        + GSS_clear$SATJOB    2    11694 11742
+        <none>                     11721 11750
+        + GSS_clear$SEX       1    11714 11752
+        + GSS_clear$GUNLAW    1    11716 11754
+        - GSS_clear$YEAR      1    11745 11764
+        + GSS_clear$CONFINAN  2    11720 11768
+        - GSS_clear$CAPPUN    1    11846 11865
+
+        Step:  AIC=11741.66
+        numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$YEAR + GSS_clear$SATJOB
+
+                             Df Deviance   AIC
+        <none>                     11694 11742
+        + GSS_clear$SEX       1    11687 11744
+        + GSS_clear$GUNLAW    1    11689 11746
+        - GSS_clear$SATJOB    2    11721 11750
+        - GSS_clear$YEAR      1    11719 11757
+        + GSS_clear$CONFINAN  2    11693 11760
+        - GSS_clear$CAPPUN    1    11823 11861
+    \end{lstlisting}    
+
+    I modelli selezionati dalle procedure AIC sono:
+   
+    \begin{itemize}
+        \item Forward: AbRape $\sim$ CapPun + GunLaw + Sex + SatJob + year
+        \item Backward: AbRape $\sim$ CapPun + GunLaw + Sex + SatJob + year
+        \item Both: AbRape $\sim$ CapPun + GunLaw + Sex + SatJob + year
+    \end{itemize}
+
+    Quindi ogni direzione seleziona lo stesso modello, che corrisponde al modello che era stato selezionato in precedenza, eccetto per la variabile SatJob che era stata considerata affidabile solo nel caso di un lavorato molto soddisfatto.
+
+    Le procedure BIC selezionano invece i modelli:
+
+    \begin{itemize}
+        \item Forward: AbRape $\sim$ CapPun + SatJob + year
+        \item Backward: AbRape $\sim$ CapPun + SatJob + year
+        \item Both: AbRape $\sim$ CapPun + SatJob + year
+    \end{itemize}
+
+    Anche in questo caso i modelli selezionati nelle varie direzioni coincidono e le variabili escluse rispetto ai modelli AIC sono GunLaw e Sex, ovvero le variabili che nella selezione precedente avevano inizialmente un p-value superiore a 0.001, possiamo spiegare questa selezione con il fatto che il termine di penalizzazione delle procedure BIC tende a penalizzare di più negli studi in cui ci sono tante osservazioni e quindi sceglierà tendenzialmente modelli più parsimoniosi in questi casi.
+
+    Ora utilizziamo questo tipo di selezione dei modelli per la variabile SatJob:
+
+    \begin{lstlisting}
+        #AIC
+        #FORWARD
+        mod_null_SatJob <- lm(numericGSS_clear$ABRAPE ~ 1)
+        mod_full_SatJob <- lm(numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN + GSS_clear$YEAR)
+        for_aic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "forward",k=2)
+
+        Start:  AIC=-8609.68
+        numericGSS_clear$SATJOB ~ 1
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CONFINAN  2    53.561 6706.6 -8709.6
+        + GSS_clear$CAPPUN    1    11.052 6749.1 -8629.1
+        + GSS_clear$ABRAPE    1     9.960 6750.2 -8626.9
+        <none>                            6760.2 -8609.7
+        + GSS_clear$SEX       1     0.387 6759.8 -8608.4
+        + GSS_clear$GUNLAW    1     0.074 6760.1 -8607.8
+        + GSS_clear$YEAR      1     0.027 6760.2 -8607.7
+
+        Step:  AIC=-8709.62
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN
+
+                           Df Sum of Sq    RSS     AIC
+        + GSS_clear$CAPPUN  1   10.4203 6696.2 -8727.9
+        + GSS_clear$ABRAPE  1    9.9986 6696.6 -8727.1
+        <none>                          6706.6 -8709.6
+        + GSS_clear$SEX     1    0.8984 6705.7 -8709.4
+        + GSS_clear$YEAR    1    0.4353 6706.2 -8708.5
+        + GSS_clear$GUNLAW  1    0.0256 6706.6 -8707.7
+
+        Step:  AIC=-8727.94
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN
+
+                           Df Sum of Sq    RSS     AIC
+        + GSS_clear$ABRAPE  1   12.2538 6683.9 -8749.9
+        <none>                          6696.2 -8727.9
+        + GSS_clear$SEX     1    0.3903 6695.8 -8726.7
+        + GSS_clear$YEAR    1    0.3791 6695.8 -8726.7
+        + GSS_clear$GUNLAW  1    0.1439 6696.1 -8726.2
+
+        Step:  AIC=-8749.87
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN + GSS_clear$ABRAPE
+
+                           Df Sum of Sq    RSS     AIC
+        <none>                          6683.9 -8749.9
+        + GSS_clear$SEX     1   0.49021 6683.5 -8748.8
+        + GSS_clear$YEAR    1   0.21572 6683.7 -8748.3
+        + GSS_clear$GUNLAW  1   0.19224 6683.8 -8748.2
+
+        #BACKWARD
+        back_aic_SatJob <- step(mod_full_SatJob, scope=formula(mod_full_SatJob), direction = "backward",k=2)
+
+        Start:  AIC=-8745.73
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN + GSS_clear$YEAR
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$YEAR      1     0.156 6683.2 -8747.4
+        - GSS_clear$GUNLAW    1     0.275 6683.3 -8747.2
+        - GSS_clear$SEX       1     0.571 6683.6 -8746.6
+        <none>                            6683.0 -8745.7
+        - GSS_clear$CAPPUN    1    12.190 6695.2 -8723.9
+        - GSS_clear$ABRAPE    1    12.275 6695.3 -8723.8
+        - GSS_clear$CONFINAN  2    53.332 6736.3 -8645.9
+
+        Step:  AIC=-8747.43
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$GUNLAW    1     0.308 6683.5 -8748.8
+        - GSS_clear$SEX       1     0.606 6683.8 -8748.2
+        <none>                            6683.2 -8747.4
+        - GSS_clear$CAPPUN    1    12.242 6695.4 -8725.5
+        - GSS_clear$ABRAPE    1    12.428 6695.6 -8725.2
+        - GSS_clear$CONFINAN  2    53.184 6736.3 -8647.9
+
+        Step:  AIC=-8748.83
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$SEX       1     0.490 6683.9 -8749.9
+        <none>                            6683.5 -8748.8
+        - GSS_clear$CAPPUN    1    12.069 6695.5 -8727.3
+        - GSS_clear$ABRAPE    1    12.354 6695.8 -8726.7
+        - GSS_clear$CONFINAN  2    53.262 6736.7 -8649.1
+
+        Step:  AIC=-8749.87
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        <none>                            6683.9 -8749.9
+        - GSS_clear$ABRAPE    1    12.254 6696.2 -8727.9
+        - GSS_clear$CAPPUN    1    12.675 6696.6 -8727.1
+        - GSS_clear$CONFINAN  2    52.907 6736.9 -8650.8
+
+        #BOTH
+        both_aic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "both",k=2)
+
+        Start:  AIC=-8609.68
+        numericGSS_clear$SATJOB ~ 1
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CONFINAN  2    53.561 6706.6 -8709.6
+        + GSS_clear$CAPPUN    1    11.052 6749.1 -8629.1
+        + GSS_clear$ABRAPE    1     9.960 6750.2 -8626.9
+        <none>                            6760.2 -8609.7
+        + GSS_clear$SEX       1     0.387 6759.8 -8608.4
+        + GSS_clear$GUNLAW    1     0.074 6760.1 -8607.8
+        + GSS_clear$YEAR      1     0.027 6760.2 -8607.7
+
+        Step:  AIC=-8709.62
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CAPPUN    1    10.420 6696.2 -8727.9
+        + GSS_clear$ABRAPE    1     9.999 6696.6 -8727.1
+        <none>                            6706.6 -8709.6
+        + GSS_clear$SEX       1     0.898 6705.7 -8709.4
+        + GSS_clear$YEAR      1     0.435 6706.2 -8708.5
+        + GSS_clear$GUNLAW    1     0.026 6706.6 -8707.7
+        - GSS_clear$CONFINAN  2    53.561 6760.2 -8609.7
+
+        Step:  AIC=-8727.94
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$ABRAPE    1    12.254 6683.9 -8749.9
+        <none>                            6696.2 -8727.9
+        + GSS_clear$SEX       1     0.390 6695.8 -8726.7
+        + GSS_clear$YEAR      1     0.379 6695.8 -8726.7
+        + GSS_clear$GUNLAW    1     0.144 6696.1 -8726.2
+        - GSS_clear$CAPPUN    1    10.420 6706.6 -8709.6
+        - GSS_clear$CONFINAN  2    52.929 6749.1 -8629.1
+
+        Step:  AIC=-8749.87
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN + GSS_clear$ABRAPE
+
+                             Df Sum of Sq    RSS     AIC
+        <none>                            6683.9 -8749.9
+        + GSS_clear$SEX       1     0.490 6683.5 -8748.8
+        + GSS_clear$YEAR      1     0.216 6683.7 -8748.3
+        + GSS_clear$GUNLAW    1     0.192 6683.8 -8748.2
+        - GSS_clear$ABRAPE    1    12.254 6696.2 -8727.9
+        - GSS_clear$CAPPUN    1    12.675 6696.6 -8727.1
+        - GSS_clear$CONFINAN  2    52.907 6736.9 -8650.8
+
+        #BIC
+        #FORWARD
+        for_bic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "forward",k=log(length(GSS_clear$SATJOB)))
+
+        Start:  AIC=-8602.2
+        numericGSS_clear$SATJOB ~ 1
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CONFINAN  2    53.561 6706.6 -8687.2
+        + GSS_clear$CAPPUN    1    11.052 6749.1 -8614.1
+        + GSS_clear$ABRAPE    1     9.960 6750.2 -8612.0
+        <none>                            6760.2 -8602.2
+        + GSS_clear$SEX       1     0.387 6759.8 -8593.5
+        + GSS_clear$GUNLAW    1     0.074 6760.1 -8592.9
+        + GSS_clear$YEAR      1     0.027 6760.2 -8592.8
+
+        Step:  AIC=-8687.18
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN
+
+                           Df Sum of Sq    RSS     AIC
+        + GSS_clear$CAPPUN  1   10.4203 6696.2 -8698.0
+        + GSS_clear$ABRAPE  1    9.9986 6696.6 -8697.2
+        <none>                          6706.6 -8687.2
+        + GSS_clear$SEX     1    0.8984 6705.7 -8679.5
+        + GSS_clear$YEAR    1    0.4353 6706.2 -8678.6
+        + GSS_clear$GUNLAW  1    0.0256 6706.6 -8677.8
+
+        Step:  AIC=-8698.02
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN
+
+                           Df Sum of Sq    RSS     AIC
+        + GSS_clear$ABRAPE  1   12.2538 6683.9 -8712.5
+        <none>                          6696.2 -8698.0
+        + GSS_clear$SEX     1    0.3903 6695.8 -8689.3
+        + GSS_clear$YEAR    1    0.3791 6695.8 -8689.3
+        + GSS_clear$GUNLAW  1    0.1439 6696.1 -8688.8
+
+        Step:  AIC=-8712.48
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN + GSS_clear$ABRAPE
+
+                           Df Sum of Sq    RSS     AIC
+        <none>                          6683.9 -8712.5
+        + GSS_clear$SEX     1   0.49021 6683.5 -8704.0
+        + GSS_clear$YEAR    1   0.21572 6683.7 -8703.4
+        + GSS_clear$GUNLAW  1   0.19224 6683.8 -8703.4
+
+        #BACKWARD
+        back_bic_SatJob <- step(mod_full_SatJob, scope=formula(mod_full_SatJob), direction = "backward",k=log(length(GSS_clear$SATJOB)))
+
+        Start:  AIC=-8685.91
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN + GSS_clear$YEAR
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$YEAR      1     0.156 6683.2 -8695.1
+        - GSS_clear$GUNLAW    1     0.275 6683.3 -8694.9
+        - GSS_clear$SEX       1     0.571 6683.6 -8694.3
+        <none>                            6683.0 -8685.9
+        - GSS_clear$CAPPUN    1    12.190 6695.2 -8671.6
+        - GSS_clear$ABRAPE    1    12.275 6695.3 -8671.4
+        - GSS_clear$CONFINAN  2    53.332 6736.3 -8601.0
+
+        Step:  AIC=-8695.08
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$GUNLAW    1     0.308 6683.5 -8704.0
+        - GSS_clear$SEX       1     0.606 6683.8 -8703.4
+        <none>                            6683.2 -8695.1
+        - GSS_clear$CAPPUN    1    12.242 6695.4 -8680.6
+        - GSS_clear$ABRAPE    1    12.428 6695.6 -8680.3
+        - GSS_clear$CONFINAN  2    53.184 6736.3 -8610.5
+
+        Step:  AIC=-8703.96
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        - GSS_clear$SEX       1     0.490 6683.9 -8712.5
+        <none>                            6683.5 -8704.0
+        - GSS_clear$CAPPUN    1    12.069 6695.5 -8689.9
+        - GSS_clear$ABRAPE    1    12.354 6695.8 -8689.3
+        - GSS_clear$CONFINAN  2    53.262 6736.7 -8619.2
+
+        Step:  AIC=-8712.48
+        numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$ABRAPE + GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        <none>                            6683.9 -8712.5
+        - GSS_clear$ABRAPE    1    12.254 6696.2 -8698.0
+        - GSS_clear$CAPPUN    1    12.675 6696.6 -8697.2
+        - GSS_clear$CONFINAN  2    52.907 6736.9 -8628.4
+
+        #BOTH
+        both_bic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "both",k=log(length(GSS_clear$SATJOB)))
+
+        Start:  AIC=-8602.2
+        numericGSS_clear$SATJOB ~ 1
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CONFINAN  2    53.561 6706.6 -8687.2
+        + GSS_clear$CAPPUN    1    11.052 6749.1 -8614.1
+        + GSS_clear$ABRAPE    1     9.960 6750.2 -8612.0
+        <none>                            6760.2 -8602.2
+        + GSS_clear$SEX       1     0.387 6759.8 -8593.5
+        + GSS_clear$GUNLAW    1     0.074 6760.1 -8592.9
+        + GSS_clear$YEAR      1     0.027 6760.2 -8592.8
+
+        Step:  AIC=-8687.18
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$CAPPUN    1    10.420 6696.2 -8698.0
+        + GSS_clear$ABRAPE    1     9.999 6696.6 -8697.2
+        <none>                            6706.6 -8687.2
+        + GSS_clear$SEX       1     0.898 6705.7 -8679.5
+        + GSS_clear$YEAR      1     0.435 6706.2 -8678.6
+        + GSS_clear$GUNLAW    1     0.026 6706.6 -8677.8
+        - GSS_clear$CONFINAN  2    53.561 6760.2 -8602.2
+
+        Step:  AIC=-8698.02
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN
+
+                             Df Sum of Sq    RSS     AIC
+        + GSS_clear$ABRAPE    1    12.254 6683.9 -8712.5
+        <none>                            6696.2 -8698.0
+        + GSS_clear$SEX       1     0.390 6695.8 -8689.3
+        + GSS_clear$YEAR      1     0.379 6695.8 -8689.3
+        + GSS_clear$GUNLAW    1     0.144 6696.1 -8688.8
+        - GSS_clear$CAPPUN    1    10.420 6706.6 -8687.2
+        - GSS_clear$CONFINAN  2    52.929 6749.1 -8614.1
+
+        Step:  AIC=-8712.48
+        numericGSS_clear$SATJOB ~ GSS_clear$CONFINAN + GSS_clear$CAPPUN + GSS_clear$ABRAPE
+
+                             Df Sum of Sq    RSS     AIC
+        <none>                            6683.9 -8712.5
+        + GSS_clear$SEX       1     0.490 6683.5 -8704.0
+        + GSS_clear$YEAR      1     0.216 6683.7 -8703.4
+        + GSS_clear$GUNLAW    1     0.192 6683.8 -8703.4
+        - GSS_clear$ABRAPE    1    12.254 6696.2 -8698.0
+        - GSS_clear$CAPPUN    1    12.675 6696.6 -8697.2
+        - GSS_clear$CONFINAN  2    52.907 6736.9 -8628.4
+    \end{lstlisting}
+
+    I modelli selezionati dalle procedure AIC sono:
+   
+    \begin{itemize}
+        \item Forward: SatJob $\sim$ CapPun + AbRape + ConFinAN
+        \item Backward: SatJob $\sim$ CapPun + AbRape + ConFinAN
+        \item Both: SatJob $\sim$ CapPun + AbRape + ConFinAN
+    \end{itemize}
+
+    Ogni direzione seleziona lo stesso modello, che corrisponde al modello che era stato selezionato in precedenza.
+
+    Le procedure BIC selezionano invece i modelli:
+
+    \begin{itemize}
+        \item Forward: SatJob $\sim$ CapPun + AbRape + ConFinAN
+        \item Backward: SatJob $\sim$ CapPun + AbRape + ConFinAN
+        \item Both: SatJob $\sim$ CapPun + AbRape + ConFinAN
+    \end{itemize}
+
+    Questa volta anche le procedure BIC selezionano gli stessi modelli, quindi si può dire che il modello fosse adatto alla situazione.
+
+    \subsection{Modello grafico}
+    In questa sezione procediamo con lo sviluppo di un modello grafico dei dati ottenuto tramite un grafo non direzionato, che possiamo ottenere partendo dal modello saturo e poi calcolandone un modello ridotto tramite una procedura stepwise di direzione "backward" e termine di penalizzazione che segue il modello AIC:
+
+    \begin{lstlisting}
+        library("gRain")
+        library("gRbase")
+        library("gRim")
+        GSS_table <- table(GSS$CAPPUN, GSS$GUNLAW, GSS$SEX, GSS$ABRAPE, GSS$CONFINAN, GSS$SATJOB, GSS$YEAR, dnn=c("CapPun", "GunLaw", "Sex", "AbRape", "ConFinAN", "SatJob", "year"))
+        grafo_saturo <- dmod(~.^., data=GSS_table)
+        plot(grafo_saturo)
+        grafo_AIC <- stepwise(grafo_saturo)
+        plot(grafo_AIC)
+    \end{lstlisting}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\linewidth]{grafo_saturo.pdf}
+        \caption{grafo\_saturo}
+        \label{fig:enter-label}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\linewidth]{grafo_AIC.pdf}
+        \caption{grafo\_AIC}
+        \label{fig:enter-label}
+    \end{figure}
+
+    Come possiamo notare dopo la selezione stepwise per il grafo si ottengono dei risultati leggermente diversi da quelli ottenuti nelle varie selezioni dei modelli viste in precedenza, questo è imputabile al fatto che le selezioni precedenti partono da modelli semplici e nei vari passaggi analizzano l'influenza che hanno le singole variabili nei confronti della variabile obiettivo, mentre nel modello grafico si parte da un modello molto più complesso che tiene già conto delle relazioni che ogni variabile ha con tutte le altre, quindi nonostante in due selezioni differenti si usi una procedura di selezione stepwise con penalizzazione di tipo AIC per entrambe, è normale che si possano ottenere dei risultati differenti.
+    Ad ogni modo le interazioni principali vengono spesso conservate, infatti, ad esempio, in questo caso possiamo notare che:
+
+    $$SatJob \perp\!\!\!\perp \{GunLaw;Sex;year\} \mid \{CapPun;AbRape;ConFinAN\}$$
+
+    esattamente come era emerso dai modelli precedenti che avevano come variabile obiettivo SatJob.
+    Discorso differente invece per AbRape poichè dal modello grafico emerge che:
+
+    $$AbRape \perp\!\!\!\perp year \mid \{CapPun;GunLaw;Sex;ConFinAN;SatJob\}$$
+
+    mentre dai modelli precedenti si era visto che AbRape dipendeva sempre direttamente da year.
+
+    \subsection{Conclusioni dei modelli selezionati}
+
+    In conclusione questi sono i modelli che sono stati selezionati per le variabili:
+
+    \begin{itemize}
+        \item CapPun $\sim$ AbRape + GunLaw + Sex + SatJob
+        \item GunLaw $\sim$ CapPun + AbRape + Sex + year
+        \item AbRape $\sim$ CapPun + GunLaw + Sex + year \\
+        \\
+        AIC: AbRape $\sim$ CapPun + GunLaw + Sex + SatJob + year \\
+        \\
+        BIC: AbRape $\sim$ CapPun + SatJob + year
+        \item ConfInAN $\sim$ Sex + SatJob + year
+        \item SatJob $\sim$ CapPun + AbRape + ConFinAN \\
+        \\
+        AIC: SatJob $\sim$ CapPun + AbRape + ConFinAN \\
+        \\
+        BIC: SatJob $\sim$ CapPun + AbRape + ConFinAN \\
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\linewidth]{grafo_AIC.pdf}
+        \caption{grafo\_AIC}
+        \label{fig:enter-label}
+    \end{figure}
+
+    \subsection{Codice Completo}
+    \begin{lstlisting}
+        rm(list=ls(all=TRUE))
+        dataGSS = read.csv("pap.txt", h=T, na.string=c("0", "8", "9"))
+        year = dataGSS$YEAR
+        dataGSS$SATJOB[dataGSS$SATJOB == 4] <- 3
+        GSS <- dataGSS[,-c(1,2)]
+        save(GSS, file="GSS.RData")
+        
+        numericGSS <- GSS
+        GSS$CAPPUN[GSS$CAPPUN==1] <- "Favorevole"
+        GSS$CAPPUN[GSS$CAPPUN==2] <- "Non favorevole"
+        GSS$GUNLAW[GSS$GUNLAW==1] <- "Favorevole"
+        GSS$GUNLAW[GSS$GUNLAW==2] <- "Non favorevole"
+        GSS$SEX[GSS$SEX==1] <- "Maschio"
+        GSS$SEX[GSS$SEX==2] <- "Femmina"
+        GSS$ABRAPE[GSS$ABRAPE==1] <- "Favorevole"
+        GSS$ABRAPE[GSS$ABRAPE==2] <- "Non favorevole"
+        GSS$CONFINAN[GSS$CONFINAN==1] <- "Molta fiducia"
+        GSS$CONFINAN[GSS$CONFINAN==2] <- "Media fiducia"
+        GSS$CONFINAN[GSS$CONFINAN==3] <- "Poca fiducia"
+        GSS$SATJOB[GSS$SATJOB==1] <- "Molto soddisfatto"
+        GSS$SATJOB[GSS$SATJOB==2] <- "Moderatamente soddisfatto"
+        GSS$SATJOB[GSS$SATJOB==3] <- "Poco soddisfatto" 
+
+        fit_CapPun <- glm(numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_CapPun)
+
+        fit_CapPun1 <- glm(numericGSS$CAPPUN ~ GSS$ABRAPE + GSS$GUNLAW + GSS$SEX + GSS$SATJOB, family = binomial(link = logit))
+        summary(fit_CapPun1)
+
+        fit_GunLaw <- glm(numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_GunLaw)
+
+        fit_GunLaw1 <- glm(numericGSS$GUNLAW ~ GSS$CAPPUN + GSS$ABRAPE + GSS$SEX + year, family = binomial(link = logit))
+        summary(fit_GunLaw1)
+
+        fit_AbRape <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$CONFINAN + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_AbRape)
+
+        fit_AbRape1 <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$SATJOB + year, family = binomial(link = logit))
+        summary(fit_AbRape1)
+
+        fit_AbRape2 <- glm(numericGSS$ABRAPE ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + year, family = binomial(link = logit))
+        summary(fit_AbRape2)
+
+        fit_ConfInAN <- lm(numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$ABRAPE + GSS$SATJOB + year)
+        summary(fit_ConfInAN)
+
+        fit_ConfInAN1 <- lm(numericGSS$CONFINAN ~ GSS$CAPPUN + GSS$SEX + GSS$SATJOB + year)
+        summary(fit_ConfInAN1)
+
+        fit_ConfInAN2 <- lm(numericGSS$CONFINAN ~ GSS$SEX + GSS$SATJOB + year)
+        summary(fit_ConfInAN2)
+
+        fit_SatJob <- lm(numericGSS$SATJOB ~ GSS$CAPPUN + GSS$GUNLAW + GSS$SEX + GSS$ABRAPE + GSS$CONFINAN + year)
+        summary(fit_SatJob)
+
+        fit_SatJob1 <- lm(numericGSS$SATJOB ~ GSS$CAPPUN + GSS$ABRAPE + GSS$CONFINAN)
+        summary(fit_SatJob1)
+
+        GSS$YEAR <- year
+        GSS_clear <- na.omit(GSS)
+        numericGSS$YEAR <- year
+        numericGSS_clear <- na.omit(numericGSS)
+
+        mod_null_AbRape <- glm(numericGSS_clear$ABRAPE ~ 1, family = binomial(link = logit))
+        mod_full_AbRape <- glm(numericGSS_clear$ABRAPE ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$CONFINAN + GSS_clear$SATJOB + GSS_clear$YEAR, family=binomial(link=logit))
+        
+        for_aic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "forward",k=2)
+        back_aic_AbRape <- step(mod_full_AbRape, scope=formula(mod_full_AbRape), direction = "backward",k=2)
+        both_aic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "both",k=2)
+
+        for_bic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "forward",k=log(length(GSS_clear$ABRAPE)))
+        back_bic_AbRape <- step(mod_full_AbRape, scope=formula(mod_full_AbRape), direction = "backward",k=log(length(GSS_clear$ABRAPE)))
+        both_bic_AbRape <- step(mod_null_AbRape, scope=formula(mod_full_AbRape), direction = "both",k=log(length(GSS_clear$ABRAPE)))
+
+        mod_null_SatJob <- lm(numericGSS_clear$ABRAPE ~ 1)
+        mod_full_SatJob <- lm(numericGSS_clear$SATJOB ~ GSS_clear$CAPPUN + GSS_clear$GUNLAW + GSS_clear$SEX + GSS_clear$ABRAPE + GSS_clear$CONFINAN + GSS_clear$YEAR)
+        
+        for_aic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "forward",k=2)
+        back_aic_SatJob <- step(mod_full_SatJob, scope=formula(mod_full_SatJob), direction = "backward",k=2)
+        both_aic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "both",k=2)
+
+        for_bic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "forward",k=log(length(GSS_clear$SATJOB)))
+        back_bic_SatJob <- step(mod_full_SatJob, scope=formula(mod_full_SatJob), direction = "backward",k=log(length(GSS_clear$SATJOB)))
+        both_bic_SatJob <- step(mod_null_SatJob, scope=formula(mod_full_SatJob), direction = "both",k=log(length(GSS_clear$SATJOB)))
+
+        library("gRain")
+        library("gRbase")
+        library("gRim")
+        
+        GSS_table <- table(GSS$CAPPUN, GSS$GUNLAW, GSS$SEX, GSS$ABRAPE, GSS$CONFINAN, GSS$SATJOB, GSS$YEAR, dnn=c("CapPun", "GunLaw", "Sex", "AbRape", "ConFinAN", "SatJob", "year"))
+        
+        grafo_saturo <- dmod(~.^., data=GSS_table)
+        plot(grafo_saturo)
+        
+        grafo_AIC <- stepwise(grafo_saturo)
+        plot(grafo_AIC)
+
+
+
+
+
+
+        
+    \end{lstlisting}
+    
+\end{document}
